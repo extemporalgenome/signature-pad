@@ -211,7 +211,7 @@ function SignaturePad (selector, options) {
     previous.y = null
 
     if (settings.output && output.length > 0)
-      $(settings.output, context).val(JSON.stringify(output))
+      $(settings.output, context).val(self.getSignatureString())
   }
 
   /**
@@ -629,13 +629,17 @@ function SignaturePad (selector, options) {
       self.clearCanvas()
       $(settings.typed, context).hide()
 
-      if (typeof paths === 'string')
+      if (typeof paths === 'string') {
         paths = JSON.parse(paths)
+        if (settings.augmentJson) {
+          paths = paths.s
+        }
+      }
 
       drawSignature(paths, canvasContext, true)
 
       if (settings.output && $(settings.output, context).length > 0)
-        $(settings.output, context).val(JSON.stringify(output))
+        $(settings.output, context).val(self.getSignatureString())
     }
 
     /**
@@ -646,17 +650,29 @@ function SignaturePad (selector, options) {
 
     /**
      * Returns the signature as a Js array
+     * If settings.augmentJson is true, a Js object will be returned instead
      *
      * @return {Array}
      */
-    , getSignature : function () { return output }
+    , getSignature : function () {
+      if (settings.augmentJson) {
+        return {
+          w : canvas.width()
+          , h : canvas.height()
+          , s : output
+        }
+      }
+      return output
+    }
 
     /**
      * Returns the signature as a Json string
      *
      * @return {String}
      */
-    , getSignatureString : function () { return JSON.stringify(output) }
+    , getSignatureString : function () {
+      return JSON.stringify(self.getSignature())
+    }
 
     /**
      * Returns the signature as an image
@@ -737,6 +753,7 @@ $.fn.signaturePad = function (options) {
  */
 $.fn.signaturePad.defaults = {
   defaultAction : 'typeIt' // What action should be highlighted first: typeIt or drawIt
+  , augmentJson : false // Augment Json to be {"w": /* width */, "h": /* height */, "s": [ /* coords... */ ]}
   , displayOnly : false // Initialize canvas for signature display only; ignore buttons and inputs
   , drawOnly : false // Whether the to allow a typed signature or not
   , canvas : 'canvas' // Selector for selecting the canvas element
